@@ -1,13 +1,37 @@
 "use client";
 
+import { useState } from "react";
 import { Brain, Sparkles, TrendingUp, Clock, Zap, ArrowRight } from "lucide-react";
 import AIInsightCard from "@/components/ui/AIInsightCard";
 import ActivityChart from "@/components/dashboard/ActivityChart";
 import { mockFindings, mockAILogs, mockMonthlyData } from "@/lib/mock-data";
 
 export default function AnalysisPage() {
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisToast, setAnalysisToast] = useState(false);
+
+  async function handleAnalyze() {
+    if (analyzing) return;
+    setAnalyzing(true);
+    setAnalysisToast(false);
+    await new Promise((r) => setTimeout(r, 2000));
+    setAnalyzing(false);
+    setAnalysisToast(true);
+    setTimeout(() => setAnalysisToast(false), 5000);
+  }
+
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* Analysis toast banner */}
+      {analysisToast && (
+        <div className="bg-gold/10 border border-gold/30 px-5 py-3 flex items-center gap-3 animate-fade-up">
+          <Sparkles className="w-4 h-4 text-gold flex-shrink-0" />
+          <p className="text-small text-white">
+            Analyse terminee — <span className="text-gold">3 nouvelles recommandations</span> disponibles
+          </p>
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 mb-2">
@@ -135,9 +159,21 @@ export default function AnalysisPage() {
             <p className="text-small text-white mb-3">
               Lancer une analyse manuelle
             </p>
-            <button className="w-full bg-gold text-black py-2.5 text-[10px] uppercase tracking-[0.12em] font-medium hover:bg-gold-light transition-colors duration-300 flex items-center justify-center gap-1.5">
-              Analyser maintenant
-              <ArrowRight className="w-3 h-3" />
+            <button
+              onClick={handleAnalyze}
+              disabled={analyzing}
+              className="w-full bg-gold text-black py-2.5 text-[10px] uppercase tracking-[0.12em] font-medium hover:bg-gold-light transition-colors duration-300 flex items-center justify-center gap-1.5 disabled:opacity-70"
+            >
+              {analyzing ? (
+                <>
+                  <span className="animate-pulse">Analyse en cours...</span>
+                </>
+              ) : (
+                <>
+                  Analyser maintenant
+                  <ArrowRight className="w-3 h-3" />
+                </>
+              )}
             </button>
           </div>
         </div>

@@ -2,9 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "iralink-dashboard",
-      "runtimeExecutable": "cmd.exe",
-      "runtimeArgs": ["/c", "C:\\Users\\THEO.COUTARD\\iralink-dashboard\\start-dev.cmd"],
+      "name": "iralink-dev",
+      "runtimeExecutable": "C:\Users\THEO.COUTARD\nodejs\node-v20.18.1-win-x64\node.exe",
+      "runtimeArgs": ["C:\Users\THEO.COUTARD\nodejs\node-v20.18.1-win-x64\node_modules\npm\bin\npm-cli.js", "run", "dev"],
       "port": 3000
     }
   ]

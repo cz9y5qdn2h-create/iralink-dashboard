@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { Zap, Filter, Plus, Sparkles } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Zap, Filter, Plus, Sparkles, Loader2, X } from "lucide-react";
 import AutomationCard from "@/components/ui/AutomationCard";
 import { mockAutomations } from "@/lib/mock-data";
 
 type FilterType = "all" | "active" | "suggested" | "paused" | "failed";
+type TriggerType = "Planifie" | "Webhook" | "Email" | "Formulaire" | "Manuel";
 
 const filters: { key: FilterType; label: string }[] = [
   { key: "all", label: "Toutes" },
@@ -17,6 +18,13 @@ const filters: { key: FilterType; label: string }[] = [
 
 export default function AutomationsPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const [showModal, setShowModal] = useState(false);
+  const [nom, setNom] = useState("");
+  const [description, setDescription] = useState("");
+  const [declencheur, setDeclencheur] = useState<TriggerType>("Manuel");
+  const [creating, setCreating] = useState(false);
+  const [created, setCreated] = useState(false);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   const filtered =
     activeFilter === "all"
@@ -26,6 +34,43 @@ export default function AutomationsPage() {
   const aiSuggested = mockAutomations.filter(
     (a) => a.status === "suggested"
   ).length;
+
+  function openModal() {
+    setNom("");
+    setDescription("");
+    setDeclencheur("Manuel");
+    setCreating(false);
+    setCreated(false);
+    setShowModal(true);
+  }
+
+  function closeModal() {
+    setShowModal(false);
+  }
+
+  function handleOverlayClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (e.target === overlayRef.current) closeModal();
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setCreating(true);
+    await new Promise((r) => setTimeout(r, 1500));
+    setCreating(false);
+    setCreated(true);
+    setTimeout(() => {
+      setShowModal(false);
+    }, 1500);
+  }
+
+  // Close on ESC
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") closeModal();
+    }
+    if (showModal) window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showModal]);
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -44,9 +89,12 @@ export default function AutomationsPage() {
             <span className="text-gold">{aiSuggested} suggerees par l&apos;IA</span>
           </p>
         </div>
-        <button className="flex items-center gap-2 bg-gold text-black px-6 py-3 text-[11px] uppercase tracking-[0.12em] font-medium hover:bg-gold-light transition-colors duration-300">
+        <button
+          onClick={openModal}
+          className="flex items-center gap-2 bg-gold text-black px-6 py-3 text-[11px] uppercase tracking-[0.12em] font-medium hover:bg-gold-light transition-colors duration-300"
+        >
           <Plus className="w-3.5 h-3.5" />
-          Nouvelle
+          Nouvelle automatisation
         </button>
       </div>
 
@@ -65,7 +113,10 @@ export default function AutomationsPage() {
               </p>
             </div>
           </div>
-          <button className="text-[11px] text-gold uppercase tracking-wider hover:text-gold-light transition-colors flex items-center gap-1.5">
+          <button
+            onClick={() => setActiveFilter("suggested")}
+            className="text-[11px] text-gold uppercase tracking-wider hover:text-gold-light transition-colors flex items-center gap-1.5"
+          >
             Voir les suggestions
             <Zap className="w-3 h-3" />
           </button>
@@ -107,6 +158,87 @@ export default function AutomationsPage() {
           <p className="text-small text-grey">
             Aucune automatisation dans cette categorie
           </p>
+        </div>
+      )}
+
+      {/* Modal */}
+      {showModal && (
+        <div
+          ref={overlayRef}
+          onClick={handleOverlayClick}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+        >
+          <div className="bg-[#111] border border-border-dim w-full max-w-lg mx-4 p-8 relative animate-fade-up">
+            <button
+              onClick={closeModal}
+              className="absolute top-4 right-4 text-grey hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-[22px] h-[2px] bg-gold" />
+              <span className="tag">Nouvelle automatisation</span>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="block text-[10px] uppercase tracking-[0.14em] text-grey mb-2">
+                  Nom
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={nom}
+                  onChange={(e) => setNom(e.target.value)}
+                  className="w-full bg-black border border-border-dim text-white px-4 py-3 text-small focus:border-gold/50 focus:outline-none transition-colors duration-300"
+                  placeholder="Ex : Tri automatique des emails"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase tracking-[0.14em] text-grey mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  className="w-full bg-black border border-border-dim text-white px-4 py-3 text-small focus:border-gold/50 focus:outline-none transition-colors duration-300 resize-none"
+                  placeholder="Decrivez ce que fait cette automatisation..."
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase tracking-[0.14em] text-grey mb-2">
+                  Declencheur
+                </label>
+                <select
+                  value={declencheur}
+                  onChange={(e) => setDeclencheur(e.target.value as TriggerType)}
+                  className="w-full bg-black border border-border-dim text-white px-4 py-3 text-small focus:border-gold/50 focus:outline-none transition-colors duration-300"
+                >
+                  <option value="Planifie">Planifie</option>
+                  <option value="Webhook">Webhook</option>
+                  <option value="Email">Email</option>
+                  <option value="Formulaire">Formulaire</option>
+                  <option value="Manuel">Manuel</option>
+                </select>
+              </div>
+              <button
+                type="submit"
+                disabled={creating || created}
+                className="w-full bg-gold text-black py-3 text-[11px] uppercase tracking-[0.12em] font-medium hover:bg-gold-light transition-colors duration-300 flex items-center justify-center gap-2 disabled:opacity-80"
+              >
+                {creating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Creation en cours...
+                  </>
+                ) : created ? (
+                  "✓ Creee !"
+                ) : (
+                  "Creer l'automatisation"
+                )}
+              </button>
+            </form>
+          </div>
         </div>
       )}
     </div>

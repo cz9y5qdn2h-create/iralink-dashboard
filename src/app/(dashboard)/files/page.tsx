@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { FileText, Upload, Brain, Clock, Trash2, Eye } from "lucide-react";
 
 interface FileItem {
@@ -10,9 +10,10 @@ interface FileItem {
   size: string;
   analyzed: boolean;
   uploaded_at: string;
+  url?: string;
 }
 
-const mockFiles: FileItem[] = [
+const initialFiles: FileItem[] = [
   { id: "1", name: "organigramme-2026.pdf", type: "PDF", size: "2.4 MB", analyzed: true, uploaded_at: "2026-04-01" },
   { id: "2", name: "process-ventes.docx", type: "DOCX", size: "890 KB", analyzed: true, uploaded_at: "2026-03-28" },
   { id: "3", name: "budget-q1-2026.xlsx", type: "XLSX", size: "1.1 MB", analyzed: true, uploaded_at: "2026-03-25" },
@@ -20,8 +21,53 @@ const mockFiles: FileItem[] = [
   { id: "5", name: "fiche-processus-rh.pdf", type: "PDF", size: "1.8 MB", analyzed: true, uploaded_at: "2026-03-20" },
 ];
 
+function formatSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function getFileType(name: string): string {
+  return name.split(".").pop()?.toUpperCase() ?? "FILE";
+}
+
 export default function FilesPage() {
+  const [files, setFiles] = useState<FileItem[]>(initialFiles);
   const [dragActive, setDragActive] = useState(false);
+  const [lastAdded, setLastAdded] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function addFiles(newFiles: FileList | null) {
+    if (!newFiles || newFiles.length === 0) return;
+    const added: FileItem[] = [];
+    Array.from(newFiles).forEach((f) => {
+      const item: FileItem = {
+        id: String(Date.now() + Math.random()),
+        name: f.name,
+        type: getFileType(f.name),
+        size: formatSize(f.size),
+        analyzed: false,
+        uploaded_at: new Date().toISOString().split("T")[0],
+        url: URL.createObjectURL(f),
+      };
+      added.push(item);
+    });
+    setFiles((prev) => [...prev, ...added]);
+    setLastAdded(added[added.length - 1].name);
+    setTimeout(() => setLastAdded(null), 3000);
+  }
+
+  function deleteFile(id: string, name: string) {
+    if (!confirm(`Supprimer le fichier "${name}" ?`)) return;
+    setFiles((prev) => prev.filter((f) => f.id !== id));
+  }
+
+  function viewFile(file: FileItem) {
+    if (file.url) {
+      window.open(file.url, "_blank");
+    } else {
+      alert(`Apercu non disponible pour : ${file.name}`);
+    }
+  }
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -41,7 +87,11 @@ export default function FilesPage() {
       <div
         onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
         onDragLeave={() => setDragActive(false)}
-        onDrop={() => setDragActive(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragActive(false);
+          addFiles(e.dataTransfer.files);
+        }}
         className={`border-2 border-dashed p-12 text-center transition-all duration-300 ${
           dragActive
             ? "border-gold bg-gold/[0.04]"
@@ -51,24 +101,40 @@ export default function FilesPage() {
         <Upload className={`w-8 h-8 mx-auto mb-4 ${dragActive ? "text-gold" : "text-grey"}`} />
         <p className="text-small text-white mb-1">
           Glissez vos fichiers ici ou{" "}
-          <span className="text-gold cursor-pointer hover:text-gold-light">
+          <span
+            className="text-gold cursor-pointer hover:text-gold-light"
+            onClick={() => fileInputRef.current?.click()}
+          >
             parcourez
           </span>
         </p>
         <p className="text-[10px] text-grey">
           PDF, DOCX, XLSX, CSV — Max 25 MB par fichier
         </p>
+        {lastAdded && (
+          <p className="text-[11px] text-gold mt-3 animate-fade-up">
+            ✓ &quot;{lastAdded}&quot; ajoute
+          </p>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf,.docx,.xlsx,.csv"
+          className="hidden"
+          onChange={(e) => addFiles(e.target.files)}
+        />
       </div>
 
       {/* Files List */}
       <div>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-[22px] h-[2px] bg-gold" />
-          <span className="tag">Documents uploades ({mockFiles.length})</span>
+          <span className="tag">Documents uploades ({files.length})</span>
         </div>
 
         <div className="space-y-[2px]">
-          {mockFiles.map((file, i) => (
+          {files.map((file, i) => (
             <div
               key={file.id}
               className="bg-grey-light border border-border-dim p-4 flex items-center justify-between card-hover group animate-fade-up"
@@ -105,10 +171,16 @@ export default function FilesPage() {
                     </span>
                   </div>
                 )}
-                <button className="p-1.5 text-grey hover:text-white transition-colors opacity-0 group-hover:opacity-100">
+                <button
+                  onClick={() => viewFile(file)}
+                  className="p-1.5 text-grey hover:text-white transition-colors"
+                >
                   <Eye className="w-3.5 h-3.5" />
                 </button>
-                <button className="p-1.5 text-grey hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
+                <button
+                  onClick={() => deleteFile(file.id, file.name)}
+                  className="p-1.5 text-grey hover:text-red-400 transition-colors"
+                >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>

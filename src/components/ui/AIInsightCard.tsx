@@ -1,6 +1,7 @@
 "use client";
 
 import { Brain, ArrowRight, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
 import type { Finding } from "@/types";
 
 interface AIInsightCardProps {
@@ -15,6 +16,8 @@ const severityColors = {
 };
 
 export default function AIInsightCard({ finding, delay = 0 }: AIInsightCardProps) {
+  const router = useRouter();
+
   return (
     <div
       className={`bg-grey-light border border-border-dim border-l-2 ${severityColors[finding.severity]} p-5 group animate-fade-up hover:bg-[#1A1A1A] transition-all duration-300`}
@@ -39,11 +42,14 @@ export default function AIInsightCard({ finding, delay = 0 }: AIInsightCardProps
           <p className="text-[12px] text-grey leading-relaxed">{finding.description}</p>
         </div>
       </div>
-      <div className="flex items-center gap-1.5 mt-3 ml-11 text-gold opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer">
+      <button
+        onClick={() => router.push("/automations")}
+        className="flex items-center gap-1.5 mt-3 ml-11 text-gold/60 hover:text-gold transition-all duration-300 cursor-pointer group/btn"
+      >
         <Sparkles className="w-3 h-3" />
         <span className="text-[10px] uppercase tracking-wider">Automatiser</span>
-        <ArrowRight className="w-3 h-3 transform group-hover:translate-x-1 transition-transform duration-300" />
-      </div>
+        <ArrowRight className="w-3 h-3 transform group-hover/btn:translate-x-1 transition-transform duration-300" />
+      </button>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Plug } from "lucide-react";
 import IntegrationCard from "@/components/ui/IntegrationCard";
 import { mockIntegrations } from "@/lib/mock-data";
@@ -8,8 +9,35 @@ export default function IntegrationsPage() {
   const connected = mockIntegrations.filter((i) => i.status === "connected");
   const available = mockIntegrations.filter((i) => i.status !== "connected");
 
+  const [connectingId, setConnectingId] = useState<string | null>(null);
+  const [connectedIds, setConnectedIds] = useState<Set<string>>(new Set());
+  const [toast, setToast] = useState<string | null>(null);
+
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  }
+
+  function handleConnect(id: string) {
+    if (connectingId) return;
+    setConnectingId(id);
+    showToast("Connexion en cours...");
+    setTimeout(() => {
+      setConnectingId(null);
+      setConnectedIds((prev) => new Set(Array.from(prev).concat(id)));
+      showToast("Integration connectee avec succes !");
+    }, 1500);
+  }
+
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-gold text-black px-6 py-3 text-[11px] uppercase tracking-[0.12em] font-medium shadow-lg animate-fade-up">
+          {toast}
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 mb-2">
@@ -38,6 +66,7 @@ export default function IntegrationsPage() {
             <IntegrationCard
               key={integration.id}
               integration={integration}
+              onConnect={() => handleConnect(integration.id)}
               delay={i * 80}
             />
           ))}
@@ -56,7 +85,11 @@ export default function IntegrationsPage() {
           {available.map((integration, i) => (
             <IntegrationCard
               key={integration.id}
-              integration={integration}
+              integration={{
+                ...integration,
+                status: connectedIds.has(integration.id) ? "connected" : integration.status,
+              }}
+              onConnect={() => handleConnect(integration.id)}
               delay={i * 80}
             />
           ))}
@@ -73,9 +106,12 @@ export default function IntegrationsPage() {
           Si votre outil n&apos;est pas dans la liste, contactez-nous. On peut
           connecter pratiquement n&apos;importe quelle API.
         </p>
-        <button className="border border-gold text-gold px-6 py-2.5 text-[11px] uppercase tracking-[0.12em] hover:bg-gold hover:text-black transition-all duration-300">
+        <a
+          href="mailto:theo@iralink-agency.com?subject=Integration personnalisee"
+          className="inline-block border border-gold text-gold px-6 py-2.5 text-[11px] uppercase tracking-[0.12em] hover:bg-gold hover:text-black transition-all duration-300"
+        >
           Demander une integration
-        </button>
+        </a>
       </div>
     </div>
   );
