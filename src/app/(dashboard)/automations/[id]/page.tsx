@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useState } from "react";
 import {
   ArrowLeft,
   Zap,
@@ -12,6 +13,7 @@ import {
   Sparkles,
   Settings,
   Calendar,
+  Loader2,
 } from "lucide-react";
 import { mockAutomations } from "@/lib/mock-data";
 
@@ -28,10 +30,39 @@ const mockExecutions = [
 
 export default function AutomationDetailPage() {
   const params = useParams();
-  const automation = mockAutomations.find((a) => a.id === params.id) || mockAutomations[0];
+  const initialAutomation = mockAutomations.find((a) => a.id === params.id) || mockAutomations[0];
+  const [automation, setAutomation] = useState(initialAutomation);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  async function toggleStatus() {
+    const newStatus = automation.status === "active" ? "paused" : "active";
+    setStatusLoading(true);
+    try {
+      const res = await fetch(`/api/automations/${automation.id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        setAutomation((prev) => ({ ...prev, status: newStatus }));
+        setToast(`Automatisation ${newStatus === "active" ? "activée" : "mise en pause"}`);
+        setTimeout(() => setToast(null), 3000);
+      }
+    } finally {
+      setStatusLoading(false);
+    }
+  }
 
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-gold text-black px-6 py-3 text-[11px] uppercase tracking-[0.12em] font-medium shadow-lg animate-fade-up">
+          {toast}
+        </div>
+      )}
+
       {/* Back + Header */}
       <div>
         <Link
@@ -68,13 +99,21 @@ export default function AutomationDetailPage() {
               <Settings className="w-4 h-4" />
             </button>
             {automation.status === "active" ? (
-              <button className="flex items-center gap-2 px-4 py-2.5 border border-gold/30 text-gold hover:bg-gold hover:text-black transition-all duration-300 text-[11px] uppercase tracking-wider">
-                <Pause className="w-3.5 h-3.5" />
+              <button
+                onClick={() => void toggleStatus()}
+                disabled={statusLoading}
+                className="flex items-center gap-2 px-4 py-2.5 border border-gold/30 text-gold hover:bg-gold hover:text-black transition-all duration-300 text-[11px] uppercase tracking-wider disabled:opacity-60"
+              >
+                {statusLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Pause className="w-3.5 h-3.5" />}
                 Pause
               </button>
             ) : (
-              <button className="flex items-center gap-2 px-4 py-2.5 bg-gold text-black hover:bg-gold-light transition-all duration-300 text-[11px] uppercase tracking-wider font-medium">
-                <Play className="w-3.5 h-3.5" />
+              <button
+                onClick={() => void toggleStatus()}
+                disabled={statusLoading}
+                className="flex items-center gap-2 px-4 py-2.5 bg-gold text-black hover:bg-gold-light transition-all duration-300 text-[11px] uppercase tracking-wider font-medium disabled:opacity-60"
+              >
+                {statusLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
                 Activer
               </button>
             )}
