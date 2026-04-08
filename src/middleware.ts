@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Routes that don't require authentication
-const publicRoutes = ["/login", "/signup", "/forgot-password"];
-const apiPublicRoutes = ["/api/auth/login", "/api/auth/signup", "/api/stripe/webhook"];
+const publicRoutes = ["/", "/login", "/forgot-password"];
+const apiPublicRoutes = ["/api/auth/login", "/api/auth/logout"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -25,13 +25,18 @@ export function middleware(request: NextRequest) {
   // Check for auth token
   const token = request.cookies.get("sb-access-token")?.value;
 
-  // If user is on a public route and IS authenticated, redirect to dashboard
-  if (publicRoutes.includes(pathname) && token) {
-    return NextResponse.redirect(new URL("/", request.url));
+  // If user is on login and IS authenticated, redirect to dashboard
+  if (pathname === "/login" && token) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // If user is on a protected route and NOT authenticated, redirect to login
-  if (!publicRoutes.includes(pathname) && !pathname.startsWith("/api") && !token) {
+  // Public routes: allow without auth
+  if (publicRoutes.includes(pathname)) {
+    return NextResponse.next();
+  }
+
+  // Protected routes: require auth
+  if (!pathname.startsWith("/api") && !token) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
@@ -42,12 +47,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
     "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };

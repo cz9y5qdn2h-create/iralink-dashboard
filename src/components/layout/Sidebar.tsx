@@ -10,15 +10,15 @@ import {
   Brain,
   FileText,
   Settings,
-  CreditCard,
   Users,
   ChevronLeft,
   LogOut,
   Sparkles,
+  Shield,
 } from "lucide-react";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Automatisations", href: "/automations", icon: Zap },
   { name: "Integrations", href: "/integrations", icon: Plug },
   { name: "Analyse IA", href: "/analysis", icon: Brain },
@@ -27,7 +27,7 @@ const navigation = [
 ];
 
 const bottomNav = [
-  { name: "Facturation", href: "/settings/billing", icon: CreditCard },
+  { name: "Admin", href: "/admin", icon: Shield },
   { name: "Parametres", href: "/settings", icon: Settings },
 ];
 
@@ -36,7 +36,7 @@ export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
 
   const isActive = (href: string) => {
-    if (href === "/") return pathname === "/";
+    if (href === "/dashboard") return pathname === "/dashboard";
     return pathname.startsWith(href);
   };
 
@@ -48,7 +48,7 @@ export default function Sidebar() {
     >
       {/* Logo */}
       <div className="flex items-center h-[72px] px-5 border-b border-border-dim">
-        <Link href="/" className="flex items-center gap-3 group">
+        <Link href="/dashboard" className="flex items-center gap-3 group">
           <div className="w-8 h-8 rounded-none bg-gold/10 border border-border flex items-center justify-center">
             <Sparkles className="w-4 h-4 text-gold" />
           </div>
@@ -146,16 +146,19 @@ export default function Sidebar() {
         </button>
 
         {/* Logout */}
-        <button
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-none transition-all duration-300 text-grey hover:text-red-400 w-full ${
-            collapsed ? "justify-center px-2" : ""
-          }`}
-        >
-          <LogOut className="w-[18px] h-[18px] flex-shrink-0" />
-          {!collapsed && (
-            <span className="text-small tracking-wide">Deconnexion</span>
-          )}
-        </button>
+        <form action="/api/auth/logout" method="POST">
+          <button
+            type="submit"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-none transition-all duration-300 text-grey hover:text-red-400 w-full ${
+              collapsed ? "justify-center px-2" : ""
+            }`}
+          >
+            <LogOut className="w-[18px] h-[18px] flex-shrink-0" />
+            {!collapsed && (
+              <span className="text-small tracking-wide">Deconnexion</span>
+            )}
+          </button>
+        </form>
       </div>
     </aside>
   );

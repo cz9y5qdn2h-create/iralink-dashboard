@@ -28,7 +28,7 @@ export default function LoginPage() {
         return;
       }
 
-      window.location.href = "/";
+      window.location.href = "/dashboard";
     } catch {
       setError("Erreur de connexion");
     } finally {
@@ -113,13 +113,13 @@ export default function LoginPage() {
       </form>
 
       <p className="mt-6 text-center text-[11px] text-grey">
-        Pas encore de compte ?{" "}
-        <Link
-          href="/signup"
+        Acces sur invitation uniquement.{" "}
+        <a
+          href="mailto:theo@iralink-agency.com"
           className="text-gold hover:text-gold-light transition-colors"
         >
-          Commencer gratuitement
-        </Link>
+          Contacter Iralink
+        </a>
       </p>
     </div>
   );
